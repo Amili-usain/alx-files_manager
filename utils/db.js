@@ -1,54 +1,53 @@
-import { MongoClient } from 'mongodb';
+/* eslint-disable no-console */
+/* eslint-disable class-methods-use-this */
+/* eslint-disable no-unused-vars */
 
-// Configuration constants
-const HOST = process.env.DB_HOST || 'localhost';
-const PORT = process.env.DB_PORT || 27017;
-const DATABASE = process.env.DB_DATABASE || 'files_manager';
-
-const url = `mongodb://${HOST}:${PORT}`;
+// Import the MongoDB module
+const { MongoClient } = require('mongodb');
 
 class DBClient {
-  /**
-   * Constructs a new DBClient instance.
-   * Initializes the MongoDB client and connects to the database.
-   */
   constructor() {
-    this.client = new MongoClient(url, { useUnifiedTopology: true, useNewUrlParser: true });
-    this.client.connect().then(() => {
-      this.db = this.client.db(`${DATABASE}`);    // Connect to the MongoDB database
-    }).catch((err) => {
-      console.log(err);
+    // Get the MongoDB connection options from environment variables or use default values
+    const host = process.env.DB_HOST || 'localhost';
+    const port = process.env.DB_PORT || 27017;
+    const database = process.env.DB_DATABASE || 'files_manager';
+
+    // Construct the MongoDB connection URI
+    const uri = `mongodb://${host}:${port}/${database}`;
+
+    // Create a MongoDB client
+    this.client = new MongoClient(uri, { useUnifiedTopology: true });
+
+    // Initialize the client and connect to the MongoDB server
+    this.client.connect((error) => {
+      if (error) {
+        console.error('Error connecting to MongoDB:', error);
+      } else {
+        console.log('Connected to MongoDB successfully.');
+      }
     });
   }
 
-  /**
-   * Checks if the MongoDB client is connected to the database.
-   * @returns {boolean} True if connected, false otherwise.
-   */
   isAlive() {
+    // Check if the MongoDB client is connected to the server
     return this.client.isConnected();
   }
 
-  /**
-   * Retrieves the number of documents in the "users" collection.
-   * @returns {Promise<number>} The number of users.
-   */
   async nbUsers() {
-    const users = this.db.collection('users');
-    const usersNum = await users.countDocuments();
-    return usersNum;
+    // Use the MongoDB client to count the number of documents in the users collection
+    const db = this.client.db();
+    const usersCollection = db.collection('users');
+    return usersCollection.countDocuments();
   }
 
-   /**
-    * Retrieves the number of documents in the "users" collection.
-    * @returns {Promise<number>} The number of users.
-    */
-    async nbFiles() {
-    const files = this.db.collection('files');
-    const filesNum = await files.countDocuments();
-    return filesNum;
+  async nbFiles() {
+    // Use the MongoDB client to count the number of documents in the files collection
+    const db = this.client.db();
+    const filesCollection = db.collection('files');
+    return filesCollection.countDocuments();
   }
 }
 
+// Create an instance of DBClient and export it
 const dbClient = new DBClient();
 module.exports = dbClient;
